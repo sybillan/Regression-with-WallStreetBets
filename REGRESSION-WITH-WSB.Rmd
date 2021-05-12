@@ -1,6 +1,6 @@
 ---
 title: "Regression with WSB"
-output: html_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
