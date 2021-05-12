@@ -1,0 +1,59 @@
+---
+title: "Regression with WSB"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r 1}
+#Using ML to draw regression model of how WallStreetBets drove price of GME
+
+# Setup
+
+setwd("C:/Users/aarth/Downloads/R/GME_Analysis")
+
+library(dplyr)
+library(tidyverse)
+library(readr)
+
+
+
+dataset1 <- read_csv("reddit_wsb.csv",col_types = cols(.default = "c"))
+dataset1$title = gsub(pattern = "\\,",".",dataset1$title)
+dataset1$body  = gsub(pattern = "\\,",".",dataset1$body)
+dataset1$title = gsub(pattern = "\\|",".",dataset1$title)
+dataset1$body  = gsub(pattern = "\\|",".",dataset1$body)
+
+
+GME<-read.table(unz("archive.zip","GME.csv"), header=T,quote="\"",sep=",")
+
+
+wsb<-dataset1
+
+#1. Regression Fit against Subreddit Daily Thread Volume
+
+GME$Date<-as.Date(GME$Date,"%Y-%m-%d")  
+wsb$X<-as.Date(wsb$timestamp,"%m/%d/%Y")
+
+#Histogram
+hist(wsb$X,100)
+freq<-data.frame(table(wsb$X))
+freq$Var1<-as.Date(freq$Var1,"%Y-%m-%d")
+text<-wsb[,1]
+colnames(freq)<-c("Date","Freq")
+GME<-dplyr::left_join(GME,freq,by="Date")
+GME$Freq[is.na(GME$Freq)] <- 0
+
+summary(lm(GME$High~GME$Freq,data=GME))
+
+```
+
+
+```{r}
+
+```
+
