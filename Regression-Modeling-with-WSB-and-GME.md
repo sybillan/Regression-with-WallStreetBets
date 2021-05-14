@@ -4,7 +4,7 @@ GME Regression Model
 ``` r
 #Using Statlearning to draw regression model of how the users of subreddit WallStreetBets drove price of GME in 2021
 
-#Inital Setup
+#Initial Setup
 
 library(dplyr) # for filter and join 
 library(readr) # for read_csv
@@ -39,10 +39,11 @@ head(GME)
     ## 5 2021-01-08 18.18 18.30 17.08 17.69     17.69  6482000
     ## 6 2021-01-11 19.41 20.65 19.01 19.94     19.94 14908000
 
-WSB data for feature ‘title’ has errors in punctuation including “,”,
-“;”, “.”, “/”, "“, and also, notoriously,”\|". Using gsub for
-eliminating delimiters from the title column. Thanks to <MLane@Kaggle>
-for cleaning the WSB data.
+WSB data for feature ‘title’ has multiple errors in punctuation
+including “,”, “;”, “.”, “/”, "“, and also, notoriously, the csv
+delimiter”\|" in title text. We are using gsub for eliminating
+delimiters from the title column. Thanks to \[MLane@Kaggle\] for
+providing the Data Cleaning algorithm.
 
 ``` r
 dataset1$title = gsub(pattern = "\\,",".",dataset1$title)
@@ -63,12 +64,12 @@ m<-str_which(wsb$title,"GME")
 m<-append(m,str_which(wsb$title,"GameStop"))
 wsb_gamestop<-wsb[c(m),]
 
-#Deriving frequency table for GameStop/GME Mentions against Date
+#Deriving the frequency table for GameStop/GME Mentions in subreddit against Date
 freq<-data.frame(table(wsb_gamestop$X))
 freq$Var1<-as.Date(freq$Var1,"%Y-%m-%d")
 colnames(freq)<-c("Date","Freq")
 
-#Joining with the GME Stock Index file
+#Performing Left Join with the GME Stock Index file via Date
 GME<-dplyr::left_join(GME,freq,by="Date")
 
 GME$Freq[is.na(GME$Freq)] <- 0
