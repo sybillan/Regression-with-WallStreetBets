@@ -7,30 +7,31 @@ output: github_document
 
 
 ```{r setup, include=TRUE, message=FALSE,warning=FALSE}
-#Using ML to draw regression model of how the users of subreddit WallStreetBets drove price of GME in 2021
+
+#Using Statlearning to draw regression model of how the users of subreddit WallStreetBets drove price of GME in 2021
 #Inital Setup
 
-
-
 library(dplyr) # for filter and join functions
+library(readr) # for read_csv
+library(tidyverse) #for str_which
 
-
+#Loading WallStreetBets file
 dataset1 <- read_csv("reddit_wsb.csv",col_types = cols(.default = "c"))
 
-
+#Loading GME Market data from Jan to April 2021
 GME<-read.table(unz("archive.zip","GME.csv"), header=T,quote="\"",sep=",")
 ```
 
-WSB data for feature 'title' has errors in punctuation including ",", ";", ".", "/", "\", and also, "|".  Using gsub, eliminating delimiters from the title column. Thanks to MLane@Kaggle for cleaning the WSB data.
+WSB data for feature 'title' has errors in punctuation including ",", ";", ".", "/", "\", and also, notoriously, "|".  Using gsub, eliminating delimiters from the title column. Thanks to MLane@Kaggle for cleaning the WSB data.
 
-```{r setup, include=TRUE, message=FALSE,warning=FALSE}
+```{r setup2, include=TRUE, message=FALSE,warning=FALSE}
 dataset1$title = gsub(pattern = "\\,",".",dataset1$title)
 dataset1$body  = gsub(pattern = "\\,",".",dataset1$body)
 wsb<-dataset1
 
 ```
 
-Regression Fit Against daily frequency posts that mention GME/GameStop
+Regression Fit Against frequency of daily posts that mention GME/GameStop
 ```{r}
 #Formatting Dates on both GME and WSB file
 GME$Date<-as.Date(GME$Date,"%Y-%m-%d")  
@@ -58,7 +59,7 @@ plot(GME$Freq, GME$High)
 abline(lm(High~Freq,data=GME))
 ```
 
-Null hypothesis can be rejected, since p is significant at 0.00162. 
+Null hypothesis can be rejected, since p is significant at 0.00162. There is a causal relationship between predictor and dependent variable.
 
 
 
@@ -98,7 +99,7 @@ plot(GME$Musk,GME$Change)
 abline(lm(Change~Musk,data=GME))
 ```
 
-While GME's High Price is not responsive to Musk's tweeting, the change in price is, with p-value at 0.000882 and also observable using correlation function.
+While GME's High Price is not responsive to Musk's tweeting, the % change in price is, with p-value at 0.000882 and also observable using correlation function. Change ~ Musk @ 0.36 positive.
 ```{r}
 correlation_matrix<-cor(GME[,-1])
 correlation_matrix
