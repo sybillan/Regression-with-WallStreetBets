@@ -39,11 +39,10 @@ head(GME)
     ## 5 2021-01-08 18.18 18.30 17.08 17.69     17.69  6482000
     ## 6 2021-01-11 19.41 20.65 19.01 19.94     19.94 14908000
 
-WSB data for feature ‘title’ has multiple errors in punctuation
-including “,”, “;”, “.”, “/”, "“, and also, notoriously, the csv
-delimiter”\|" in title text. We are using gsub for eliminating
-delimiters from the title column. Thanks to \[MLane@Kaggle\] for
-providing the Data Cleaning algorithm.
+WSB data for feature ‘title’ has punctuation in text including “,”, “;”,
+“.”, “/”, "“, and also, notoriously, the csv delimiter”\|" in title
+text. We are using gsub for eliminating delimiters from the title.
+Thanks to \[MLane@Kaggle\] for providing the Data Cleaning algorithm.
 
 ``` r
 dataset1$title = gsub(pattern = "\\,",".",dataset1$title)
@@ -51,8 +50,8 @@ dataset1$body  = gsub(pattern = "\\,",".",dataset1$body)
 wsb<-dataset1
 ```
 
-Regression Fit Against frequency of daily posts that mention
-GME/GameStop
+Regression Fit Against frequency of daily posts that mention ‘GME’ or
+‘GameStop’
 
 ``` r
 #Formatting Dates on both GME and WSB file
@@ -105,10 +104,16 @@ abline(lm(High~Freq,data=GME))
 
 ![](Regression-Modeling-with-WSB-and-GME_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
-Null hypothesis can be rejected, since p is significant at 0.00162.
-There is a causal relationship between predictor and dependent variable.
+The abline is the least squares line and is determined by the
+coefficient estimates β0 \~ 143.5 (intercept) and β1\~ 0.097 (slope). F
+statistic &gt;1 and R squared value 0.1135 measures order of variance
+between Daily Volume of GME mentions on WallStreetBets and GME’S High
+price. Null hypothesis can be rejected, since p is significant at
+0.00162. So, we reject the null hypothesis and deem there to be some
+causal relationship between predictor and dependent variable.
 
-Regression Fit Against Musk’s tweet that mention GME/GameStop
+Multiple Regression Fit Against Musk’s tweet that mentions GME/GameStop
+‘Gamestonk’
 
 ``` r
 #Assessing Impact of Musk's solitary tweet on 26th Jan on GME Price Movement
@@ -139,7 +144,8 @@ summary(lm(High~Freq+Musk,data=GME))
     ## F-statistic:  5.25 on 2 and 82 DF,  p-value: 0.007155
 
 There is no relationship to be inferred between GME’s High Price with
-Musk’s tweet. As observed, p is not significant.
+Musk’s tweet. As observed, p=0.94173 is not significant and Residual
+Standard Error is high at 89.57.
 
 ``` r
 GME$Change<-((GME$Close-GME$Open)/GME$Open)*100
@@ -173,7 +179,8 @@ abline(lm(Change~Musk,data=GME))
 
 ![](Regression-Modeling-with-WSB-and-GME_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
-Regression Fit Against Musk’s tweet that mention GME/GameStop
+Multiple Regression Fit Against Musk’s tweet that mentions GME/GameStop
+‘Gamestonk’
 
 ``` r
 GME$Musk<-0
@@ -237,7 +244,8 @@ abline(lm(Change~Musk,data=GME))
 
 While GME’s High Price is not responsive to Musk’s tweeting, the %
 change in price is, with p-value at 0.000882 and also observable using
-correlation function. Change \~ Musk @ 0.36 positive.
+correlation function. % Change in Stock Price is positively correlated
+with Musk’s tweeting with F-Statistic being 6.948 and &gt;1.
 
 ``` r
 correlation_matrix<-cor(GME[,-1])
