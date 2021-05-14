@@ -1,0 +1,108 @@
+---
+title: "GME Regression Model"
+output: github_document
+---
+
+```{r setup, include=TRUE, message=FALSE,warning=FALSE}
+
+#Using Statlearning to draw regression model of how the users of subreddit WallStreetBets drove price of GME in 2021
+
+#Inital Setup
+
+library(dplyr) # for filter and join 
+library(readr) # for read_csv
+library(tidyverse) #for str_which
+
+#Loading WallStreetBets file
+dataset1 <- read_csv("reddit_wsb.csv",col_types = cols(.default = "c"))
+head(dataset1)
+
+#Loading GME Market data from Jan to April 2021
+GME<-read.table(unz("archive.zip","GME.csv"), header=T,quote="\"",sep=",")
+head(GME)
+```
+
+WSB data for feature 'title' has errors in punctuation including ",", ";", ".", "/", "", and also, notoriously, "\|". Using gsub for eliminating delimiters from the title column. Thanks to [MLane\@Kaggle](mailto:MLane@Kaggle) for cleaning the WSB data.
+
+```{r setup2, include=TRUE, message=FALSE,warning=FALSE}
+dataset1$title = gsub(pattern = "\\,",".",dataset1$title)
+dataset1$body  = gsub(pattern = "\\,",".",dataset1$body)
+wsb<-dataset1
+
+```
+
+Regression Fit Against frequency of daily posts that mention GME/GameStop
+
+```{r echo=TRUE}
+#Formatting Dates on both GME and WSB file
+GME$Date<-as.Date(GME$Date,"%Y-%m-%d")  
+wsb$X<-as.Date(wsb$timestamp,"%m/%d/%Y")
+
+#Filter for keywords 'GameStop' and 'GME' using index
+m<-str_which(wsb$title,"GME")
+m<-append(m,str_which(wsb$title,"GameStop"))
+wsb_gamestop<-wsb[c(m),]
+
+#Deriving frequency table for GameStop/GME Mentions against Date
+freq<-data.frame(table(wsb_gamestop$X))
+freq$Var1<-as.Date(freq$Var1,"%Y-%m-%d")
+colnames(freq)<-c("Date","Freq")
+
+#Joining with the GME Stock Index file
+GME<-dplyr::left_join(GME,freq,by="Date")
+
+GME$Freq[is.na(GME$Freq)] <- 0
+
+#Regression modeling of GME High Price against frequency of GME mentions on WallStreetBets 
+summary(lm(High~Freq,data=GME))
+
+plot(GME$Freq, GME$High)
+
+abline(lm(High~Freq,data=GME))
+
+```
+
+Null hypothesis can be rejected, since p is significant at 0.00162. There is a causal relationship between predictor and dependent variable.
+
+Regression Fit Against Musk's tweet that mention GME/GameStop
+
+```{r}
+#Assessing Impact of Musk's solitary tweet on 26th Jan on GME Price Movement
+GME$Musk<-0
+GME$Musk[GME$Date=="2021-01-26"]<-1
+
+summary(lm(High~Freq+Musk,data=GME))
+```
+
+There is no relationship to be inferred between GME's High Price with Musk's tweet. As observed, p is not significant.
+
+```{r echo=TRUE}
+GME$Change<-((GME$Close-GME$Open)/GME$Open)*100
+summary(lm(Change~Freq+Musk,data=GME))
+
+plot(GME$Musk,GME$Change)
+abline(lm(Change~Musk,data=GME))
+
+```
+
+Regression Fit Against Musk's tweet that mention GME/GameStop
+
+```{r echo=TRUE}
+GME$Musk<-0
+GME$Musk[GME$Date=="2021-01-26"]<-1
+
+summary(lm(High~Freq+Musk,data=GME))
+GME$Change<-((GME$Close-GME$Open)/GME$Open)*100
+
+summary(lm(Change~Freq+Musk,data=GME))
+
+plot(GME$Musk,GME$Change)
+abline(lm(Change~Musk,data=GME))
+```
+
+While GME's High Price is not responsive to Musk's tweeting, the % change in price is, with p-value at 0.000882 and also observable using correlation function. Change \~ Musk \@ 0.36 positive.
+
+```{r echo=TRUE}
+correlation_matrix<-cor(GME[,-1])
+correlation_matrix
+```
