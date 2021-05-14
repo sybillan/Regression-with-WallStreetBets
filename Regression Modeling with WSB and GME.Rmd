@@ -33,7 +33,7 @@ wsb<-dataset1
 
 Regression Fit Against frequency of daily posts that mention GME/GameStop
 
-```{r echo=TRUE}
+```{r,echo=TRUE}
 #Formatting Dates on both GME and WSB file
 GME$Date<-as.Date(GME$Date,"%Y-%m-%d")  
 wsb$X<-as.Date(wsb$timestamp,"%m/%d/%Y")
@@ -76,7 +76,7 @@ summary(lm(High~Freq+Musk,data=GME))
 
 There is no relationship to be inferred between GME's High Price with Musk's tweet. As observed, p is not significant.
 
-```{r echo=TRUE}
+```{r,echo=TRUE}
 GME$Change<-((GME$Close-GME$Open)/GME$Open)*100
 summary(lm(Change~Freq+Musk,data=GME))
 
@@ -87,7 +87,7 @@ abline(lm(Change~Musk,data=GME))
 
 Regression Fit Against Musk's tweet that mention GME/GameStop
 
-```{r echo=TRUE}
+```{r,echo=TRUE}
 GME$Musk<-0
 GME$Musk[GME$Date=="2021-01-26"]<-1
 
@@ -102,7 +102,7 @@ abline(lm(Change~Musk,data=GME))
 
 While GME's High Price is not responsive to Musk's tweeting, the % change in price is, with p-value at 0.000882 and also observable using correlation function. Change \~ Musk \@ 0.36 positive.
 
-```{r echo=TRUE}
+```{r,echo=TRUE}
 correlation_matrix<-cor(GME[,-1])
 correlation_matrix
 ```
