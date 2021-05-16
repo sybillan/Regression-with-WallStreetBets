@@ -5,6 +5,8 @@ editor_options:
   chunk_output_type: inline
 ---
 
+
+## Initial Setup
 ```{r setup, include=TRUE, message=FALSE,warning=FALSE}
 
 #Using Statlearning to draw regression model of how the users of subreddit WallStreetBets drove price of GME in 2021
@@ -14,6 +16,7 @@ editor_options:
 library(dplyr) # for filter and join 
 library(readr) # for read_csv
 library(tidyverse) #for str_which
+library(ggplot2) #for ggplot
 
 #Loading WallStreetBets file
 dataset1 <- read_csv("reddit_wsb.csv",col_types = cols(.default = "c"))
@@ -24,7 +27,7 @@ GME<-read.table(unz("archive.zip","GME.csv"), header=T,quote="\"",sep=",")
 head(GME)
 ```
 
-WSB data for feature 'title' has punctuation in text including ",", ";", ".", "/", "", and also, notoriously, the csv delimiter "\|" in title text. We are using gsub for eliminating delimiters from the title. Thanks to [MLane\@Kaggle] for providing the Data Cleaning algorithm. 
+WSB data for feature 'title' has punctuation in text including ",", ";", ".", "/", "", and also, notoriously, the csv delimiter "\|". Using gsub for eliminating delimiters from the title. Thanks to [MLane\@Kaggle] for providing the Data Cleaning algorithm for WallStreetBets. 
 
 ```{r clean, include=TRUE, message=FALSE,warning=FALSE}
 dataset1$title = gsub(pattern = "\\,",".",dataset1$title)
@@ -33,7 +36,7 @@ wsb<-dataset1
 
 ```
 
-Regression Fit Against frequency of daily posts that mention 'GME' or 'GameStop'
+# I. Linear Regression Fit -- GME High Price Against Freq of daily posts that mention 'GME' or 'GameStop'
 
 ```{r,echo=TRUE}
 #Formatting Dates on both GME and WSB file
@@ -55,40 +58,55 @@ GME<-dplyr::left_join(GME,freq,by="Date")
 
 GME$Freq[is.na(GME$Freq)] <- 0
 
-#Regression modeling of GME High Price against frequency of GME mentions on WallStreetBets 
+#Regression modeling of GME High Price against Freq of GME mentions on WallStreetBets 
 reg<-lm(High~Freq,data=GME)
 summary(reg)
-
-par(mfrow=c(2,2))
-plot(reg)
 
 plot(GME$Freq, GME$High)
 
 abline(lm(High~Freq,data=GME))
 
+
 ```
 
-The abline is the least squares line and is determined by the coefficient estimates  β0 ~ 143.5 (intercept) and β1~ 0.097 (slope). F statistic >1 and R squared value 0.1135 measures order of variance between Daily Volume of GME mentions on WallStreetBets and GME'S High price. Null hypothesis can be rejected, since p is significant at 0.00162. So, we reject the null hypothesis and deem there to be some causal relationship between predictor and dependent variable.
+The abline is the least squares line and is determined by the coefficient estimates  β0 ~ 143.5 (intercept) and β1~ 0.097 (slope). F statistic >1 and R squared value 0.1135 measures order of variance between Daily Volume of GME mentions on WallStreetBets and GME'S Daily High Price. Null hypothesis can be rejected, since p is significant at 0.00162. So, we reject the null hypothesis and deem there to be a meaningful relationship between predictor and dependent variable.
+```{r,echo=TRUE}
 
-Looking at the Residuals vs Leverage plot, we look for a data point outside of a dashed line, Cook’s distance. When the points are outside of the Cook’s distance, this means that they have high Cook’s distance scores. In this case, the values are influential to the regression results. The regression results will be altered if we exclude those cases i.e. #17,#18,#19.
+#Running Regression Diagnostics
+par(mfrow=c(2,2))
+plot(reg)
+
+```
 
 
+
+# II. Running Regression Diagnostics
+
+Residuals vs Fitted. Used to check the linear relationship assumptions. A horizontal line, without distinct patterns is an indication for a linear relationship, what is good.
+
+Normal Q-Q. Used to examine whether the residuals are normally distributed. It’s good if residuals points follow the straight dashed line.
+
+Scale-Location (or Spread-Location). Used to check the homogeneity of variance of the residuals (homoscedasticity). Horizontal line with equally spread points is a good indication of homoscedasticity.
+
+Residuals vs Leverage. Used to identify influential cases, that is extreme values that might influence the regression results when included or excluded from the analysis. 
+
+Looking at the Residuals vs Leverage plot, we look for data points outside of a dashed line, Cook’s distance. When the points are outside, this means that they have high Cook’s distance scores. In such a case, the values are influential and have a bearing on the regression results. The regression results will be altered if we exclude those cases i.e. #17,#18,#19.
+
+Looking at our outliers
 
 ```{r}
-GME<-GME[-c(17,18,19,46),]
-reg<-lm(High~Freq,data=GME)
-summary(reg)
+GME[c(17,18,19),]
 
-par(mfrow=c(2,2))
-plot(reg)
+  
+  ggplot(GME, aes(Date,High)) + 
+  geom_line(colour="blue") + scale_x_date(date_labels = "%b %d", breaks= "9 days")
 
-plot(GME$Freq, GME$High)
-
-abline(lm(High~Freq,data=GME))
+     
 ```
 
+Since the outliers pertain to the critical price movement dates,  we are retaining them for the purpose of this analysis.
 
-Multiple Regression Fit Against Musk's tweet that mentions GME/GameStop 'Gamestonk'
+# III. Multiple Regression Fit-- High Price Against Musk's tweet that mentions GME/GameStop 'Gamestonk!!' and Freq of GME mention on Subreddit WallStreetBets
 
 ```{r}
 #Assessing Impact of Musk's solitary tweet on 26th Jan on GME Price Movement
@@ -98,7 +116,7 @@ GME$Musk[GME$Date=="2021-01-26"]<-1
 summary(lm(High~Freq+Musk,data=GME))
 ```
 
-There is no relationship to be inferred between GME's High Price with Musk's tweet. As observed, p=0.94173 is not significant and Residual Standard Error is high at 89.57.
+There is no relationship to be inferred between GME's Stock High Price and Musk's tweet. As observed, p=0.94173 is not significant and Residual Standard Error is high at 89.57.
 
 ```{r,echo=TRUE}
 GME$Change<-((GME$Close-GME$Open)/GME$Open)*100
@@ -109,7 +127,7 @@ abline(lm(Change~Musk,data=GME))
 
 ```
 
-Multiple Regression Fit Against Musk's tweet that mentions GME/GameStop 'Gamestonk'
+# IV. Multiple Regression Fit-- Change in Price Against Musk's tweet that mentions GME/GameStop 'Gamestonk'and Freq of GME mention on Subreddit WallStreetBets
 
 ```{r,echo=TRUE}
 GME$Musk<-0
