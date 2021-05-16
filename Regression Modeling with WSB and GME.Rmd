@@ -56,7 +56,11 @@ GME<-dplyr::left_join(GME,freq,by="Date")
 GME$Freq[is.na(GME$Freq)] <- 0
 
 #Regression modeling of GME High Price against frequency of GME mentions on WallStreetBets 
-summary(lm(High~Freq,data=GME))
+reg<-lm(High~Freq,data=GME)
+summary(reg)
+
+par(mfrow=c(2,2))
+plot(reg)
 
 plot(GME$Freq, GME$High)
 
@@ -66,11 +70,21 @@ abline(lm(High~Freq,data=GME))
 
 The abline is the least squares line and is determined by the coefficient estimates  β0 ~ 143.5 (intercept) and β1~ 0.097 (slope). F statistic >1 and R squared value 0.1135 measures order of variance between Daily Volume of GME mentions on WallStreetBets and GME'S High price. Null hypothesis can be rejected, since p is significant at 0.00162. So, we reject the null hypothesis and deem there to be some causal relationship between predictor and dependent variable.
 
-```{r}
-wsb.lm<-lm(High~Freq, data=GME)
-wsb.res<-resid(wsb.lm)
-plot(GME$Freq, wsb.res, ylab="Residuals",xlab="Freq",main="Residual plot")
+Looking at the Residuals vs Leverage plot, we look for a data point outside of a dashed line, Cook’s distance. When the points are outside of the Cook’s distance, this means that they have high Cook’s distance scores. In this case, the values are influential to the regression results. The regression results will be altered if we exclude those cases i.e. #17,#18,#19.
 
+
+
+```{r}
+GME<-GME[-c(17,18,19,46),]
+reg<-lm(High~Freq,data=GME)
+summary(reg)
+
+par(mfrow=c(2,2))
+plot(reg)
+
+plot(GME$Freq, GME$High)
+
+abline(lm(High~Freq,data=GME))
 ```
 
 
